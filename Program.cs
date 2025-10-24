@@ -124,7 +124,7 @@ namespace SyncApp
             foreach (var file in sourceDir.GetFiles("*", SearchOption.AllDirectories))
             {
                 Console.WriteLine("Processing source file: {0}", file.FullName);
-                File.AppendAllText(logFilePath, "Processing source file: {file.FullName}\n");
+                File.AppendAllText(logFilePath, $"Processing source file: {file.FullName}\n");
 
                 string relativePath = Path.GetRelativePath(source, file.FullName);
                 sourceFiles[relativePath] = new FileStuff(relativePath, file);
