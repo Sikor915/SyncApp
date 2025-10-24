@@ -1,5 +1,4 @@
 ﻿using System.Runtime.InteropServices;
-using System.Timers;
 using Timer = System.Timers.Timer;
 
 namespace SyncApp
@@ -78,8 +77,8 @@ namespace SyncApp
 
             foreach (var file in sourceDir.GetFiles("*", SearchOption.AllDirectories))
             {
-                Console.WriteLine($"Processing source file: {file.FullName}");
-                File.AppendAllText(logFilePath, $"Processing source file: {file.FullName}\n");
+                Console.WriteLine("Processing source file: {0}", file.FullName);
+                File.AppendAllText(logFilePath, "Processing source file: {file.FullName}\n");
 
                 string relativePath = Path.GetRelativePath(source, file.FullName);
                 sourceFiles[relativePath] = new FileStuff(relativePath, file);
@@ -87,7 +86,7 @@ namespace SyncApp
 
             foreach (var file in targetDir.GetFiles("*", SearchOption.AllDirectories))
             {
-                Console.WriteLine($"Processing target file: {file.FullName}");
+                Console.WriteLine("Processing target file: {0}", file.FullName);
                 File.AppendAllText(logFilePath, $"Processing target file: {file.FullName}\n");
 
                 string relativePath = Path.GetRelativePath(target, file.FullName);
@@ -102,6 +101,47 @@ namespace SyncApp
         static void LinuxSync()
         {
             Console.WriteLine("Syncing on Linux...");
+
+            if (!Path.Exists(log))
+            {
+                Directory.CreateDirectory(log);
+            }
+            
+            string logFilePath = Path.Combine(log, "sync_" + DateTime.Now.ToString("yyyyMMdd") + ".log");
+            File.AppendAllText(logFilePath, "-----------------\nSync started at " + DateTime.Now + "\n");
+
+            if (!Path.Exists(source) || !Path.Exists(target))
+            {
+                Console.WriteLine("One or more specified directories do not exist.");
+                File.AppendAllText(logFilePath, "One or more specified directories do not exist.\n");
+
+                return;
+            }
+            
+            DirectoryInfo sourceDir = new(source);
+            DirectoryInfo targetDir = new(target);
+
+            foreach (var file in sourceDir.GetFiles("*", SearchOption.AllDirectories))
+            {
+                Console.WriteLine("Processing source file: {0}", file.FullName);
+                File.AppendAllText(logFilePath, "Processing source file: {file.FullName}\n");
+
+                string relativePath = Path.GetRelativePath(source, file.FullName);
+                sourceFiles[relativePath] = new FileStuff(relativePath, file);
+            }
+
+            foreach (var file in targetDir.GetFiles("*", SearchOption.AllDirectories))
+            {
+                Console.WriteLine("Processing target file: {0}", file.FullName);
+                File.AppendAllText(logFilePath, $"Processing target file: {file.FullName}\n");
+
+                string relativePath = Path.GetRelativePath(target, file.FullName);
+                targetFiles[relativePath] = new FileStuff(relativePath, file);
+            }
+
+            RemoveEntries(logFilePath);
+
+            UpdateEntries(logFilePath);
         }
 
         static void RemoveEntries(string logPath)
@@ -110,7 +150,7 @@ namespace SyncApp
             {
                 if (!sourceFiles.ContainsKey(targetEntry.Key))
                 {
-                    Console.WriteLine($"Deleting file: {targetEntry.Key}");
+                    Console.WriteLine("Deleting file: {0}", targetEntry.Key);
                     File.AppendAllText(logPath, $"Deleting file: {targetEntry.Key}\n");
 
                     string targetFilePath = Path.Combine(target, targetEntry.Key);
@@ -119,7 +159,6 @@ namespace SyncApp
             }
         }
 
-        // Look into this method, the pdf didn't copy into target
         static void UpdateEntries(string logPath)
         {
             foreach (var sourceEntry in sourceFiles)
@@ -129,7 +168,7 @@ namespace SyncApp
                     if (sourceEntry.Value.File.Length != targetFileStuff.File.Length ||
                         sourceEntry.Value.File.LastWriteTimeUtc != targetFileStuff.File.LastWriteTimeUtc)
                     {
-                        Console.WriteLine($"Updating file: {sourceEntry.Key}");
+                        Console.WriteLine("Updating file: {0}", sourceEntry.Key);
                         File.AppendAllText(logPath, $"Updating file: {sourceEntry.Key}\n");
 
                         string targetFilePath = Path.Combine(target, sourceEntry.Key);
@@ -139,7 +178,7 @@ namespace SyncApp
                 }
                 else
                 {
-                    Console.WriteLine($"Copying new file: {sourceEntry.Key}");
+                    Console.WriteLine("Copying new file: {0}", sourceEntry.Key);
                     File.AppendAllText(logPath, $"Copying new file: {sourceEntry.Key}\n");
 
                     string targetFilePath = Path.Combine(target, sourceEntry.Key);
